@@ -1,0 +1,3 @@
+[submodule "Plugins/TableTools"]
+	path = Plugins/TableTools
+	url = git@github.com:keywan/TableTools.git
