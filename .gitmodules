@@ -1,5 +1,5 @@
-[submodule "Plugins/TableTools"]
-	path = Plugins/TableTools
+[submodule "extras/TableTools"]
+	path = extras/TableTools
 	url = git@github.com:keywan/TableTools.git
 [submodule "extras/ColVis"]
 	path = extras/ColVis
