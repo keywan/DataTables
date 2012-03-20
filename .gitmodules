@@ -1,3 +1,9 @@
 [submodule "Plugins/TableTools"]
 	path = Plugins/TableTools
 	url = git@github.com:keywan/TableTools.git
+[submodule "extras/ColVis"]
+	path = extras/ColVis
+	url = git@github.com:keywan/ColVis.git
+[submodule "extras/ColReorder"]
+	path = extras/ColReorder
+	url = git@github.com:keywan/ColReorder.git
