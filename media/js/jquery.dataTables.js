@@ -2575,16 +2575,20 @@
 		 */
 		function _fnLanguageCompat( oLanguage )
 		{
+			var oDefaults = DataTable.defaults.oLanguage;
+		
 			/* Backwards compatibility - if there is no sEmptyTable given, then use the same as
 			 * sZeroRecords - assuming that is given.
 			 */
-			if ( !oLanguage.sEmptyTable && oLanguage.sZeroRecords )
+			if ( !oLanguage.sEmptyTable && oLanguage.sZeroRecords &&
+				oDefaults.sEmptyTable === "No data available in table" )
 			{
 				_fnMap( oLanguage, oLanguage, 'sZeroRecords', 'sEmptyTable' );
 			}
 		
 			/* Likewise with loading records */
-			if ( !oLanguage.sLoadingRecords && oLanguage.sZeroRecords )
+			if ( !oLanguage.sLoadingRecords && oLanguage.sZeroRecords &&
+				oDefaults.sLoadingRecords === "Loading..." )
 			{
 				_fnMap( oLanguage, oLanguage, 'sZeroRecords', 'sLoadingRecords' );
 			}
@@ -3070,14 +3074,14 @@
 			
 			/* Remove the old minimised thead and tfoot elements in the inner table */
 			$(o.nTable).children('thead, tfoot').remove();
-			
+		
 			/* Clone the current header and footer elements and then place it into the inner table */
-			nTheadSize = o.nTHead.cloneNode(true);
+			nTheadSize = $(o.nTHead).clone()[0];
 			o.nTable.insertBefore( nTheadSize, o.nTable.childNodes[0] );
 			
 			if ( o.nTFoot !== null )
 			{
-				nTfootSize = o.nTFoot.cloneNode(true);
+				nTfootSize = $(o.nTFoot).clone()[0];
 				o.nTable.insertBefore( nTfootSize, o.nTable.childNodes[1] );
 			}
 			
@@ -3796,7 +3800,9 @@
 					sDataType = oSettings.aoColumns[ iColumn ].sSortDataType;
 					if ( DataTable.ext.afnSortData[sDataType] )
 					{
-						var aData = DataTable.ext.afnSortData[sDataType]( oSettings, iColumn, iVisColumn );
+						var aData = DataTable.ext.afnSortData[sDataType].call( 
+							oSettings.oInstance, oSettings, iColumn, iVisColumn
+						);
 						if ( aData.length === aoData.length )
 						{
 							for ( j=0, jLen=aoData.length ; j<jLen ; j++ )
@@ -5834,7 +5840,7 @@
 		
 		
 		/**
-		 * Sort the table by a particular row
+		 * Sort the table by a particular column
 		 *  @param {int} iCol the data index to sort on. Note that this will not match the 
 		 *    'display index' if you have hidden data entries
 		 *  @dtopt API
@@ -6174,7 +6180,7 @@
 			}
 			
 			/* Ensure the table has an ID - required for accessibility */
-			if ( sId === null )
+			if ( sId === null || sId === "" )
 			{
 				sId = "DataTables_Table_"+(DataTable.ext._oExternConfig.iNextUnique++);
 				this.id = sId;
@@ -8139,7 +8145,7 @@
 		 *  @example
 		 *    $(document).ready( function() {
 		 *      $('#example').dataTable( {
-		 *        "fnDrawCallback": function() {
+		 *        "fnDrawCallback": function( oSettings ) {
 		 *          alert( 'DataTables has redrawn the table' );
 		 *        }
 		 *      } );
@@ -9344,7 +9350,7 @@
 		 * Enable horizontal scrolling. When a table is too wide to fit into a certain
 		 * layout, or you have a large number of columns in the table, you can enable
 		 * x-scrolling to show the table in a viewport, which can be scrolled. This
-		 * property can by any CSS unit, or a number (in which case it will be treated
+		 * property can be any CSS unit, or a number (in which case it will be treated
 		 * as a pixel measurement).
 		 *  @type string
 		 *  @default <i>blank string - i.e. disabled</i>
@@ -9385,10 +9391,10 @@
 	
 		/**
 		 * Enable vertical scrolling. Vertical scrolling will constrain the DataTable
-		 * to the given height, an enable scrolling for any data which overflows the
+		 * to the given height, and enable scrolling for any data which overflows the
 		 * current viewport. This can be used as an alternative to paging to display
 		 * a lot of data in a small area (although paging and scrolling can both be
-		 * enabled at the same time). This property can by any CSS unit, or a number
+		 * enabled at the same time). This property can be any CSS unit, or a number
 		 * (in which case it will be treated as a pixel measurement).
 		 *  @type string
 		 *  @default <i>blank string - i.e. disabled</i>
@@ -11302,7 +11308,13 @@
 				};
 				
 				/* Pages calculation */
-				if (iPages < iPageCount)
+				if ( oSettings._iDisplayLength === -1 )
+				{
+					iStartButton = 1;
+					iEndButton = 1;
+					iCurrentPage = 1;
+				}
+				else if (iPages < iPageCount)
 				{
 					iStartButton = 1;
 					iEndButton = iPages;
@@ -11322,6 +11334,7 @@
 					iStartButton = iCurrentPage - Math.ceil(iPageCount / 2) + 1;
 					iEndButton = iStartButton + iPageCount - 1;
 				}
+	
 				
 				/* Build the dynamic list */
 				for ( i=iStartButton ; i<=iEndButton ; i++ )
