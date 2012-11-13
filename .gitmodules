@@ -7,3 +7,6 @@
 [submodule "extras/ColReorder"]
 	path = extras/ColReorder
 	url = git@github.com:keywan/ColReorder.git
+[submodule "extras/ColumnFilterWidgets"]
+	path = extras/ColumnFilterWidgets
+	url = git://github.com/cyberhobo/ColumnFilterWidgets.git
