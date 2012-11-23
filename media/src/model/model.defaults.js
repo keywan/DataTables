@@ -791,7 +791,7 @@ DataTable.defaults = {
 		{
 			if ( i%3 === 0 && i !== 0 )
 			{
-				out = this.language.infoThousands+out;
+				out = this.oLanguage.sInfoThousands+out;
 			}
 			out = a[iLen-i-1]+out;
 		}
