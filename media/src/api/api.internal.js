@@ -14,7 +14,7 @@
 function _fnExternApiFunc (sFunc)
 {
 	return function() {
-		var aArgs = [_fnSettingsFromNode(this[DataTable.ext.iApiIndex])].concat( 
+		var aArgs = [_fnSettingsFromNode(this[DataTable.ext.iApiIndex])].concat(
 			Array.prototype.slice.call(arguments) );
 		return DataTable.ext.oApi[sFunc].apply( this, aArgs );
 	};
@@ -45,7 +45,6 @@ this.oApi = {
 	"_fnAjaxUpdate": _fnAjaxUpdate,
 	"_fnAjaxParameters": _fnAjaxParameters,
 	"_fnAjaxUpdateDraw": _fnAjaxUpdateDraw,
-	"_fnServerParams": _fnServerParams,
 	"_fnAddOptionsHtml": _fnAddOptionsHtml,
 	"_fnFeatureHtmlTable": _fnFeatureHtmlTable,
 	"_fnScrollDraw": _fnScrollDraw,
@@ -73,7 +72,6 @@ this.oApi = {
 	"_fnColumnIndexToVisible": _fnColumnIndexToVisible,
 	"_fnNodeToDataIndex": _fnNodeToDataIndex,
 	"_fnVisbleColumns": _fnVisbleColumns,
-	"_fnCalculateEnd": _fnCalculateEnd,
 	"_fnConvertToWidth": _fnConvertToWidth,
 	"_fnCalculateColumnWidths": _fnCalculateColumnWidths,
 	"_fnScrollingWidthAdjust": _fnScrollingWidthAdjust,
@@ -112,7 +110,9 @@ this.oApi = {
 	"_fnBrowserDetect": _fnBrowserDetect,
 	"_fnGetColumns": _fnGetColumns,
 	"_fnHungarianMap": _fnHungarianMap,
-	"_fnCamelToHungarian": _fnCamelToHungarian
+	"_fnCamelToHungarian": _fnCamelToHungarian,
+	"_fnBuildAjax": _fnBuildAjax,
+	"_fnAjaxDataSrc": _fnAjaxDataSrc
 };
 
 $.extend( DataTable.ext.oApi, this.oApi );

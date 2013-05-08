@@ -1,3 +1,4 @@
+/*global oInit,_that*/
 var i=0, iLen, j, jLen, k, kLen;
 var sId = this.getAttribute( 'id' );
 var bInitHandedOff = false;
@@ -30,11 +31,14 @@ for ( i=0, iLen=DataTable.settings.length ; i<iLen ; i++ )
 	/* Base check on table node */
 	if ( DataTable.settings[i].nTable == this )
 	{
-		if ( oInitEmpty || oInit.bRetrieve )
+		var bRetrieve = oInit.bRetrieve !== undefined ? oInit.bRetrieve : DataTable.defaults.bRetrieve;
+		var bDestroy = oInit.bDestroy !== undefined ? oInit.bDestroy : DataTable.defaults.bDestroy;
+
+		if ( oInitEmpty || bRetrieve )
 		{
 			return DataTable.settings[i].oInstance;
 		}
-		else if ( oInit.bDestroy )
+		else if ( bDestroy )
 		{
 			DataTable.settings[i].oInstance.fnDestroy();
 			break;
@@ -72,7 +76,7 @@ var oSettings = $.extend( true, {}, DataTable.models.oSettings, {
 	"nTable":        this,
 	"oApi":          _that.oApi,
 	"oInit":         oInit,
-	"sDestroyWidth": $(this).width(),
+	"sDestroyWidth": $(this)[0].style.width,
 	"sInstance":     sId,
 	"sTableId":      sId
 } );
@@ -86,6 +90,13 @@ oSettings.oInstance = (_that.length===1) ? _that : $(this).dataTable();
 if ( oInit.oLanguage )
 {
 	_fnLanguageCompat( oInit.oLanguage );
+}
+
+// If the length menu is given, but the init display length is not, use the length menu
+if ( oInit.aLengthMenu && ! oInit.iDisplayLength )
+{
+	oInit.iDisplayLength = $.isArray( oInit.aLengthMenu[0] ) ?
+		oInit.aLengthMenu[0][0] : oInit.aLengthMenu[0];
 }
 
 oInit = _fnExtend( $.extend(true, {}, DataTable.defaults), oInit );
@@ -109,6 +120,7 @@ _fnMap( oSettings.oScroll, oInit, "bScrollInfinite", "bInfinite" );
 _fnMap( oSettings.oScroll, oInit, "iScrollLoadGap", "iLoadGap" );
 _fnMap( oSettings.oScroll, oInit, "bScrollAutoCss", "bAutoCss" );
 _fnMap( oSettings, oInit, "asStripeClasses" );
+_fnMap( oSettings, oInit, "ajax" );
 _fnMap( oSettings, oInit, "fnServerData" );
 _fnMap( oSettings, oInit, "fnFormatNumber" );
 _fnMap( oSettings, oInit, "sServerMethod" );
@@ -159,8 +171,8 @@ else if ( oSettings.oFeatures.bDeferRender )
 
 if ( oInit.bJQueryUI )
 {
-	/* Use the JUI classes object for display. You could clone the oStdClasses object if 
-	 * you want to have multiple tables with multiple independent classes 
+	/* Use the JUI classes object for display. You could clone the oStdClasses object if
+	 * you want to have multiple tables with multiple independent classes
 	 */
 	$.extend( oSettings.oClasses, DataTable.ext.oJUIClasses );
 	
@@ -214,7 +226,7 @@ if ( oInit.aaData !== null )
 if ( oInit.oLanguage.sUrl !== "" )
 {
 	/* Get the language definitions from a file - because this Ajax call makes the language
-	 * get async to the remainder of this function we use bInitHandedOff to indicate that 
+	 * get async to the remainder of this function we use bInitHandedOff to indicate that
 	 * _fnInitialise will be fired by the returned Ajax handler, rather than the constructor
 	 */
 	oSettings.oLanguage.sUrl = oInit.oLanguage.sUrl;
@@ -397,7 +409,7 @@ if ( bUsePassedData )
 		_fnAddData( oSettings, oInit.aaData[ i ] );
 	}
 }
-else if ( oSettings.bDeferLoading || oSettings.sAjaxSource === null )
+else if ( oSettings.bDeferLoading || (oSettings.sAjaxSource === null && oSettings.ajax === null) )
 {
 	/* Grab the data from the page - only do this when deferred loading or no Ajax
 	 * source since there is no point in reading the DOM data if we are then going

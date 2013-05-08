@@ -11,8 +11,8 @@ function _fnFeatureHtmlFilter ( oSettings )
 	
 	var sSearchStr = oSettings.oLanguage.sSearch;
 	sSearchStr = (sSearchStr.indexOf('_INPUT_') !== -1) ?
-	  sSearchStr.replace('_INPUT_', '<input type="text" />') :
-	  sSearchStr==="" ? '<input type="text" />' : sSearchStr+' <input type="text" />';
+	  sSearchStr.replace('_INPUT_', '<input type="search" />') :
+	  sSearchStr==="" ? '<input type="search" />' : sSearchStr+' <input type="search" />';
 	
 	var nFilter = document.createElement( 'div' );
 	nFilter.className = oSettings.oClasses.sFilter;
@@ -22,14 +22,14 @@ function _fnFeatureHtmlFilter ( oSettings )
 		nFilter.id = oSettings.sTableId+'_filter';
 	}
 	
-	var jqFilter = $('input[type="text"]', nFilter);
+	var jqFilter = $('input[type="search"]', nFilter);
 
 	// Store a reference to the input element, so other input elements could be
 	// added to the filter wrapper if needed (submit button for example)
 	nFilter._DT_Input = jqFilter[0];
 
 	jqFilter.val( oPreviousSearch.sSearch.replace('"','&quot;') );
-	jqFilter.bind( 'keyup.DT', function(e) {
+	jqFilter.bind( 'keyup.DT search.DT', function(e) {
 		/* Update all other filter input elements for the new display */
 		var n = oSettings.aanFeatures.f;
 		var val = this.value==="" ? "" : this.value; // mental IE8 fix :-(
@@ -45,12 +45,16 @@ function _fnFeatureHtmlFilter ( oSettings )
 		/* Now do the filter */
 		if ( val != oPreviousSearch.sSearch )
 		{
-			_fnFilterComplete( oSettings, { 
-				"sSearch": val, 
+			_fnFilterComplete( oSettings, {
+				"sSearch": val,
 				"bRegex": oPreviousSearch.bRegex,
 				"bSmart": oPreviousSearch.bSmart ,
-				"bCaseInsensitive": oPreviousSearch.bCaseInsensitive 
+				"bCaseInsensitive": oPreviousSearch.bCaseInsensitive
 			} );
+
+			// Need to redraw, without resorting
+			oSettings._iDisplayStart = 0;
+			_fnDraw( oSettings );
 		}
 	} );
 
@@ -98,7 +102,7 @@ function _fnFilterComplete ( oSettings, oInput, iForce )
 		/* Now do the individual column filter */
 		for ( var i=0 ; i<oSettings.aoPreSearchCols.length ; i++ )
 		{
-			_fnFilterColumn( oSettings, aoPrevSearch[i].sSearch, i, aoPrevSearch[i].bRegex, 
+			_fnFilterColumn( oSettings, aoPrevSearch[i].sSearch, i, aoPrevSearch[i].bRegex,
 				aoPrevSearch[i].bSmart, aoPrevSearch[i].bCaseInsensitive );
 		}
 		
@@ -113,13 +117,7 @@ function _fnFilterComplete ( oSettings, oInput, iForce )
 	/* Tell the draw function we have been filtering */
 	oSettings.bFiltered = true;
 	$(oSettings.oInstance).trigger('filter', oSettings);
-	
-	/* Redraw the table */
-	oSettings._iDisplayStart = 0;
-	_fnCalculateEnd( oSettings );
-	_fnDraw( oSettings );
-	
-	/* Rebuild search array 'offline' */
+
 	_fnBuildSearchArray( oSettings, 0 );
 }
 
@@ -229,9 +227,9 @@ function _fnFilter( oSettings, sInput, iForce, bRegex, bSmart, bCaseInsensitive 
 	else
 	{
 		/*
-		 * We are starting a new search or the new search string is smaller 
+		 * We are starting a new search or the new search string is smaller
 		 * then the old one (i.e. delete). Search from the master array
-	 	 */
+		 */
 		if ( oSettings.aiDisplay.length == oSettings.aiDisplayMaster.length ||
 			   oPrevSearch.sSearch.length > sInput.length || iForce == 1 ||
 			   sInput.indexOf(oPrevSearch.sSearch) !== 0 )
@@ -243,7 +241,7 @@ function _fnFilter( oSettings, sInput, iForce, bRegex, bSmart, bCaseInsensitive 
 			_fnBuildSearchArray( oSettings, 1 );
 			
 			/* Search through all records to populate the search array
-			 * The the oSettings.aiDisplayMaster and asDataSearch arrays have 1 to 1 
+			 * The the oSettings.aiDisplayMaster and asDataSearch arrays have 1 to 1
 			 * mapping
 			 */
 			for ( i=0 ; i<oSettings.aiDisplayMaster.length ; i++ )
@@ -253,24 +251,24 @@ function _fnFilter( oSettings, sInput, iForce, bRegex, bSmart, bCaseInsensitive 
 					oSettings.aiDisplay.push( oSettings.aiDisplayMaster[i] );
 				}
 			}
-	  }
-	  else
+		}
+		else
 		{
-	  	/* Using old search array - refine it - do it this way for speed
-	  	 * Don't have to search the whole master array again
+			/* Using old search array - refine it - do it this way for speed
+			 * Don't have to search the whole master array again
 			 */
-	  	var iIndexCorrector = 0;
-	  	
-	  	/* Search the current results */
-	  	for ( i=0 ; i<oSettings.asDataSearch.length ; i++ )
+			var iIndexCorrector = 0;
+			
+			/* Search the current results */
+			for ( i=0 ; i<oSettings.asDataSearch.length ; i++ )
 			{
-	  		if ( ! rpSearch.test(oSettings.asDataSearch[i]) )
+				if ( ! rpSearch.test(oSettings.asDataSearch[i]) )
 				{
-	  			oSettings.aiDisplay.splice( i-iIndexCorrector, 1 );
-	  			iIndexCorrector++;
-	  		}
-	  	}
-	  }
+					oSettings.aiDisplay.splice( i-iIndexCorrector, 1 );
+					iIndexCorrector++;
+				}
+			}
+		}
 	}
 }
 
@@ -290,8 +288,8 @@ function _fnBuildSearchArray ( oSettings, iMaster )
 
 		var aiFilterColumns = _fnGetColumns( oSettings, 'bSearchable' );
 		var aiIndex = (iMaster===1) ?
-		 	oSettings.aiDisplayMaster :
-		 	oSettings.aiDisplay;
+			oSettings.aiDisplayMaster :
+			oSettings.aiDisplay;
 		
 		for ( var i=0, iLen=aiIndex.length ; i<iLen ; i++ )
 		{
@@ -312,8 +310,18 @@ function _fnBuildSearchArray ( oSettings, iMaster )
  */
 function _fnBuildSearchRow( oSettings, aData )
 {
-	for ( var i=0, len=aData.length ; i<len ; i++ ) {
-		aData[i] = _fnDataToSearch( aData[i], oSettings.aoColumns[i].sType );
+	var
+		idx = 0,
+		aoColumns = oSettings.aoColumns;
+
+	// aData is passed in without the columns which are not searchable, so
+	// we need to be careful in getting the correct column type
+	for ( var i=0, len=aoColumns.length ; i<len ; i++ ) {
+		aData[idx] = _fnDataToSearch( aData[idx], aoColumns[i].sType );
+
+		if ( aoColumns[i].bSearchable ) {
+			idx++;
+		}
 	}
 	
 	var sSearch = aData.join('  ');

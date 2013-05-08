@@ -48,29 +48,14 @@ function _fnInitialise ( oSettings )
 	 * drawing for us. Otherwise we draw the table regardless of the Ajax source - this allows
 	 * the table to look initialised for Ajax sourcing data (show 'loading' message possibly)
 	 */
-	if ( oSettings.oFeatures.bSort )
-	{
-		_fnSort( oSettings );
-	}
-	else if ( oSettings.oFeatures.bFilter )
-	{
-		_fnFilterComplete( oSettings, oSettings.oPreviousSearch );
-	}
-	else
-	{
-		oSettings.aiDisplay = oSettings.aiDisplayMaster.slice();
-		_fnCalculateEnd( oSettings );
-		_fnDraw( oSettings );
-	}
+	_fnReDraw( oSettings );
 	
 	/* if there is an ajax source load the data */
-	if ( oSettings.sAjaxSource !== null && !oSettings.oFeatures.bServerSide )
+	if ( (oSettings.sAjaxSource || oSettings.ajax) && !oSettings.oFeatures.bServerSide )
 	{
 		var aoData = [];
-		_fnServerParams( oSettings, aoData );
-		oSettings.fnServerData.call( oSettings.oInstance, oSettings.sAjaxSource, aoData, function(json) {
-			var aData = (oSettings.sAjaxDataProp !== "") ?
-			 	_fnGetObjectDataFn( oSettings.sAjaxDataProp )(json) : json;
+		_fnBuildAjax( oSettings, [], function(json) {
+			var aData = _fnAjaxDataSrc( oSettings, json );
 
 			/* Got the data - add it to the table */
 			for ( i=0 ; i<aData.length ; i++ )
@@ -83,16 +68,7 @@ function _fnInitialise ( oSettings )
 			 */
 			oSettings.iInitDisplayStart = iAjaxStart;
 			
-			if ( oSettings.oFeatures.bSort )
-			{
-				_fnSort( oSettings );
-			}
-			else
-			{
-				oSettings.aiDisplay = oSettings.aiDisplayMaster.slice();
-				_fnCalculateEnd( oSettings );
-				_fnDraw( oSettings );
-			}
+			_fnReDraw( oSettings );
 			
 			_fnProcessingDisplay( oSettings, false );
 			_fnInitComplete( oSettings, json );
@@ -100,7 +76,7 @@ function _fnInitialise ( oSettings )
 		return;
 	}
 	
-	/* Server-side processing initialisation complete is done at the end of _fnDraw */
+	/* Server-side processing init complete is done by _fnAjaxUpdateDraw */
 	if ( !oSettings.oFeatures.bServerSide )
 	{
 		_fnProcessingDisplay( oSettings, false );

@@ -1,5 +1,5 @@
 /**
- * Add a data array to the table, creating DOM node etc. This is the parallel to 
+ * Add a data array to the table, creating DOM node etc. This is the parallel to
  * _fnGatherData, but for adding rows from a Javascript source, rather than a
  * DOM source.
  *  @param {object} oSettings dataTables settings object
@@ -187,17 +187,17 @@ function _fnGetCellData( oSettings, iRow, iCol, sSpecific )
 	}
 
 	/* When the data source is null, we can use default column data */
-	if ( sData === null && oCol.sDefaultContent !== null )
+	if ( (sData === oData || sData === null) && oCol.sDefaultContent !== null )
 	{
 		sData = oCol.sDefaultContent;
 	}
 	else if ( typeof sData === 'function' )
 	{
-		/* If the data source is a function, then we run it and use the return */
+		// If the data source is a function, then we run it and use the return
 		return sData();
 	}
 
-	if ( sSpecific == 'display' && sData === null )
+	if ( sData === null && sSpecific == 'display' )
 	{
 		return '';
 	}
@@ -222,8 +222,22 @@ function _fnSetCellData( oSettings, iRow, iCol, val )
 }
 
 
-// Private variable that is used to match array syntax in the data property object
+// Private variable that is used to match action syntax in the data property object
 var __reArray = /\[.*?\]$/;
+var __reFn = /\(\)$/;
+
+/**
+ * Split string on periods, taking into account escaped periods
+ * @param  {string} str String to split
+ * @return {array} Split string
+ */
+function _fnSplitObjNotation( str )
+{
+	return $.map( str.match(/(\\.|[^\.])+/g), function ( s ) {
+		return s.replace('\\.', '.');
+	} );
+}
+
 
 /**
  * Return a function that can be used to get data from a source object, taking
@@ -234,11 +248,23 @@ var __reArray = /\[.*?\]$/;
  */
 function _fnGetObjectDataFn( mSource )
 {
-	if ( mSource === null )
+	if ( $.isPlainObject( mSource ) )
+	{
+		/* Build an object of get functions, and wrap them in a single call */
+		var o = {};
+		$.each( mSource, function (key, val) {
+			o[key] = _fnGetObjectDataFn( val );
+		} );
+
+		return function (data, type, extra) {
+			return o[ o[type] !== undefined ? type : '_' ](data, type, extra);
+		};
+	}
+	else if ( mSource === null )
 	{
 		/* Give an empty string for rendering / sorting etc */
 		return function (data, type) {
-			return null;
+			return data;
 		};
 	}
 	else if ( typeof mSource === 'function' )
@@ -247,26 +273,30 @@ function _fnGetObjectDataFn( mSource )
 			return mSource( data, type, extra );
 		};
 	}
-	else if ( typeof mSource === 'string' && (mSource.indexOf('.') !== -1 || mSource.indexOf('[') !== -1) )
+	else if ( typeof mSource === 'string' && (mSource.indexOf('.') !== -1 ||
+		      mSource.indexOf('[') !== -1 || mSource.indexOf('(') !== -1) )
 	{
-		/* If there is a . in the source string then the data source is in a 
+		/* If there is a . in the source string then the data source is in a
 		 * nested object so we loop over the data for each level to get the next
 		 * level down. On each loop we test for undefined, and if found immediately
 		 * return. This allows entire objects to be missing and sDefaultContent to
 		 * be used if defined, rather than throwing an error
 		 */
 		var fetchData = function (data, type, src) {
-			var a = src.split('.');
-			var arrayNotation, out, innerSrc;
+			var a = _fnSplitObjNotation( src );
+			var arrayNotation, funcNotation, out, innerSrc;
 
 			if ( src !== "" )
 			{
 				for ( var i=0, iLen=a.length ; i<iLen ; i++ )
 				{
-					// Check if we are dealing with an array notation request
+					// Check if we are dealing with special notation
 					arrayNotation = a[i].match(__reArray);
+					funcNotation = a[i].match(__reFn);
 
-					if ( arrayNotation ) {
+					if ( arrayNotation )
+					{
+						// Array notation
 						a[i] = a[i].replace(__reArray, '');
 
 						// Condition allows simply [] to be passed in
@@ -293,6 +323,13 @@ function _fnGetObjectDataFn( mSource )
 						// of the source requested, so we exit from the loop
 						break;
 					}
+					else if ( funcNotation )
+					{
+						// Function call
+						a[i] = a[i].replace(__reFn, '');
+						data = data[ a[i] ]();
+						continue;
+					}
 
 					if ( data === null || data[ a[i] ] === undefined )
 					{
@@ -313,7 +350,7 @@ function _fnGetObjectDataFn( mSource )
 	{
 		/* Array or flat object mapping */
 		return function (data, type) {
-			return data[mSource];	
+			return data[mSource];
 		};
 	}
 }
@@ -328,7 +365,16 @@ function _fnGetObjectDataFn( mSource )
  */
 function _fnSetObjectDataFn( mSource )
 {
-	if ( mSource === null )
+	if ( $.isPlainObject( mSource ) )
+	{
+		/* Unlike get, only the underscore (global) option is used for for
+		 * setting data since we don't know the type here. This is why an object
+		 * option is not documented for `mData` (which is read/write), but it is
+		 * for `mRender` which is read only.
+		 */
+		return _fnSetObjectDataFn( mSource._ );
+	}
+	else if ( mSource === null )
 	{
 		/* Nothing to do when the data source is null */
 		return function (data, val) {};
@@ -339,17 +385,20 @@ function _fnSetObjectDataFn( mSource )
 			mSource( data, 'set', val );
 		};
 	}
-	else if ( typeof mSource === 'string' && (mSource.indexOf('.') !== -1 || mSource.indexOf('[') !== -1) )
+	else if ( typeof mSource === 'string' && (mSource.indexOf('.') !== -1 ||
+		      mSource.indexOf('[') !== -1 || mSource.indexOf('(') !== -1) )
 	{
 		/* Like the get, we need to get data from a nested object */
 		var setData = function (data, val, src) {
-			var a = src.split('.'), b;
-			var arrayNotation, o, innerSrc;
+			var a = _fnSplitObjNotation( src ), b;
+			var aLast = a[a.length-1];
+			var arrayNotation, funcNotation, o, innerSrc;
 
 			for ( var i=0, iLen=a.length-1 ; i<iLen ; i++ )
 			{
 				// Check if we are dealing with an array notation request
 				arrayNotation = a[i].match(__reArray);
+				funcNotation = a[i].match(__reFn);
 
 				if ( arrayNotation )
 				{
@@ -373,6 +422,12 @@ function _fnSetObjectDataFn( mSource )
 					// of the source and has set the data, thus we can exit here
 					return;
 				}
+				else if ( funcNotation )
+				{
+					// Function call
+					a[i] = a[i].replace(__reFn, '');
+					data = data[ a[i] ]( val );
+				}
 
 				// If the nested object doesn't currently exist - since we are
 				// trying to set the value - create it
@@ -383,9 +438,18 @@ function _fnSetObjectDataFn( mSource )
 				data = data[ a[i] ];
 			}
 
-			// If array notation is used, we just want to strip it and use the property name
-			// and assign the value. If it isn't used, then we get the result we want anyway
-			data[ a[a.length-1].replace(__reArray, '') ] = val;
+			// Last item in the input - i.e, the actual set
+			if ( aLast.match(__reFn ) )
+			{
+				// Function call
+				data = data[ aLast.replace(__reFn, '') ]( val );
+			}
+			else
+			{
+				// If array notation is used, we just want to strip it and use the property name
+				// and assign the value. If it isn't used, then we get the result we want anyway
+				data[ aLast.replace(__reArray, '') ] = val;
+			}
 		};
 
 		return function (data, val) {
@@ -396,7 +460,7 @@ function _fnSetObjectDataFn( mSource )
 	{
 		/* Array or flat object mapping */
 		return function (data, val) {
-			data[mSource] = val;	
+			data[mSource] = val;
 		};
 	}
 }
@@ -430,12 +494,11 @@ function _fnClearTable( oSettings )
 	oSettings.aoData.splice( 0, oSettings.aoData.length );
 	oSettings.aiDisplayMaster.splice( 0, oSettings.aiDisplayMaster.length );
 	oSettings.aiDisplay.splice( 0, oSettings.aiDisplay.length );
-	_fnCalculateEnd( oSettings );
 }
 
 
  /**
- * Take an array of integers (index array) and remove a target integer (value - not 
+ * Take an array of integers (index array) and remove a target integer (value - not
  * the key!)
  *  @param {array} a Index array to target
  *  @param {int} iTarget value to find

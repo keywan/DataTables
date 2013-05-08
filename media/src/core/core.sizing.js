@@ -7,25 +7,24 @@
  */
 function _fnConvertToWidth ( sWidth, nParent )
 {
-	if ( !sWidth || sWidth === null || sWidth === '' )
+	if ( ! sWidth )
 	{
 		return 0;
 	}
 	
-	if ( !nParent )
+	if ( ! nParent )
 	{
 		nParent = document.body;
 	}
 	
-	var iWidth;
-	var nTmp = document.createElement( "div" );
-	nTmp.style.width = _fnStringToCss( sWidth );
+	var n = $('<div/>')
+		.css( 'width', _fnStringToCss( sWidth ) )
+		.appendTo( nParent );
+
+	var width = n[0].offsetWidth;
+	n.remove();
 	
-	nParent.appendChild( nTmp );
-	iWidth = nTmp.offsetWidth;
-	nParent.removeChild( nTmp );
-	
-	return ( iWidth );
+	return width;
 }
 
 
@@ -55,7 +54,7 @@ function _fnCalculateColumnWidths ( oSettings )
 			
 			if ( oSettings.aoColumns[i].sWidth !== null )
 			{
-				iTmpWidth = _fnConvertToWidth( oSettings.aoColumns[i].sWidthOrig, 
+				iTmpWidth = _fnConvertToWidth( oSettings.aoColumns[i].sWidthOrig,
 					nWrapper );
 				if ( iTmpWidth !== null )
 				{
@@ -67,8 +66,8 @@ function _fnCalculateColumnWidths ( oSettings )
 		}
 	}
 	
-	/* If the number of columns in the DOM equals the number that we have to process in 
-	 * DataTables, then we can use the offsets that are created by the web-browser. No custom 
+	/* If the number of columns in the DOM equals the number that we have to process in
+	 * DataTables, then we can use the offsets that are created by the web-browser. No custom
 	 * sizes can be set in order for this to happen, nor scrolling used
 	 */
 	if ( iColums == oHeaders.length && iUserInputs === 0 && iVisibleColumns == iColums &&
@@ -197,7 +196,7 @@ function _fnCalculateColumnWidths ( oSettings )
 			oNodes = _fnGetUniqueThs( oSettings, $('thead', nCalcTmp)[0] );
 		}
 
-		/* Browsers need a bit of a hand when a width is assigned to any columns when 
+		/* Browsers need a bit of a hand when a width is assigned to any columns when
 		 * x-scrolling as they tend to collapse the table to the min-width, even if
 		 * we sent the column widths. So we need to keep track of what the table width
 		 * should be by summing the user given values, and the automatic values
@@ -250,6 +249,15 @@ function _fnCalculateColumnWidths ( oSettings )
 	if ( widthAttr )
 	{
 		oSettings.nTable.style.width = _fnStringToCss( widthAttr );
+
+		if ( ! oSettings._attachedResizing &&
+			(oSettings.oScroll.sY !== '' || oSettings.oScroll.sX !== '') )
+		{
+			$(window).bind('resize.DT-'+oSettings.sInstance, function () {
+				_fnScrollDraw( oSettings );
+			} );
+			oSettings._attachedResizing = true;
+		}
 	}
 }
 
@@ -369,35 +377,42 @@ function _fnStringToCss( s )
  *  @memberof DataTable#oApi
  */
 function _fnScrollBarWidth ()
-{  
-	var inner = document.createElement('p');
-	var style = inner.style;
-	style.width = "100%";
-	style.height = "200px";
-	style.padding = "0px";
-	
-	var outer = document.createElement('div');
-	style = outer.style;
-	style.position = "absolute";
-	style.top = "0px";
-	style.left = "0px";
-	style.visibility = "hidden";
-	style.width = "200px";
-	style.height = "150px";
-	style.padding = "0px";
-	style.overflow = "hidden";
-	outer.appendChild(inner);
-	
-	document.body.appendChild(outer);
-	var w1 = inner.offsetWidth;
-	outer.style.overflow = 'scroll';
-	var w2 = inner.offsetWidth;
-	if ( w1 == w2 )
+{
+	if ( ! DataTable.__scrollbarWidth )
 	{
-		w2 = outer.clientWidth;
+		var inner = $('<p/>').css( {
+			width: '100%',
+			height: 200,
+			padding: 0
+		} )[0];
+
+		var outer = $('<div/>')
+			.css( {
+				position: 'absolute',
+				top: 0,
+				left: 0,
+				width: 200,
+				height: 150,
+				padding: 0,
+				overflow: 'hidden',
+				visibility: 'hidden'
+			} )
+			.append( inner )
+			.appendTo( 'body' );
+
+		var w1 = inner.offsetWidth;
+		outer.css( 'overflow', 'scroll' );
+		var w2 = inner.offsetWidth;
+		if ( w1 === w2 )
+		{
+			w2 = outer[0].clientWidth;
+		}
+		
+		outer.remove();
+
+		DataTable.__scrollbarWidth = w1 - w2;
 	}
-	
-	document.body.removeChild(outer);
-	return (w1 - w2);  
+
+	return DataTable.__scrollbarWidth;
 }
 

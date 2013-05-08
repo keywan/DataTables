@@ -3,8 +3,8 @@
 /**
  * Create a mapping object that allows camel case parameters to be looked up
  * for their Hungarian counterparts. The mapping is stored in a private
- * parameter called `_hungaianMap` which can be accessed on the source object.
- *  @param {object} o 
+ * parameter called `_hungarianMap` which can be accessed on the source object.
+ *  @param {object} o
  *  @memberof DataTable#oApi
  */
 function _fnHungarianMap ( o )
@@ -30,15 +30,15 @@ function _fnHungarianMap ( o )
 		}
 	} );
 
-	o._hungaianMap = map;
+	o._hungarianMap = map;
 }
 
 
 /**
  * Convert from camel case parameters to Hungarian, based on a Hungarian map
  * created by _fnHungarianMap.
- *  @param {object} src The model object which holds all parameters can has
- *    previously been run through `_fnHungarianMap`.
+ *  @param {object} src The model object which holds all parameters that can be
+ *    mapped.
  *  @param {object} user The object to convert from camel case to Hungarian.
  *  @param {boolean} force When set to `true`, properties which already have a
  *    Hungarian value in the `user` object will be overwritten. Otherwise they
@@ -47,15 +47,15 @@ function _fnHungarianMap ( o )
  */
 function _fnCamelToHungarian ( src, user, force )
 {
-	if ( ! src._hungaianMap )
+	if ( ! src._hungarianMap )
 	{
-		return;
+		_fnHungarianMap( src );
 	}
 
 	var hungarianKey;
 
 	$.each( user, function (key, val) {
-		hungarianKey = src._hungaianMap[ key ];
+		hungarianKey = src._hungarianMap[ key ];
 
 		if ( hungarianKey !== undefined && (force || user[hungarianKey] === undefined) )
 		{
@@ -96,5 +96,33 @@ function _fnLanguageCompat( oLanguage )
 	{
 		_fnMap( oLanguage, oLanguage, 'sZeroRecords', 'sLoadingRecords' );
 	}
+}
+
+
+/**
+ * Browser feature detection for capabilities, quirks
+ *  @param {object} oSettings dataTables settings object
+ *  @memberof DataTable#oApi
+ */
+function _fnBrowserDetect( oSettings )
+{
+	// Scrolling feature / quirks detection
+	var n = $(
+		'<div style="position:absolute; top:0; left:0; height:1px; width:1px; overflow:hidden">'+
+			'<div style="position:absolute; top:1px; left:1px; width:100px; overflow:scroll;">'+
+				'<div id="DT_BrowserTest" style="width:100%; height:10px;"></div>'+
+			'</div>'+
+		'</div>')[0];
+
+	document.body.appendChild( n );
+	// IE6/7 will oversize a width 100% element inside a scrolling element, to
+	// include the width of the scrollbar, while other browsers ensure the inner
+	// element is contained without forcing scrolling
+	oSettings.oBrowser.bScrollOversize = $('#DT_BrowserTest', n)[0].offsetWidth === 100 ? true : false;
+
+	// In rtl text layout, some browsers (most, but not all) will place the
+	// scrollbar on the left, rather than the right.
+	oSettings.oBrowser.bScrollbarLeft = $('#DT_BrowserTest', n).offset().left !== 1 ? true : false;
+	document.body.removeChild( n );
 }
 

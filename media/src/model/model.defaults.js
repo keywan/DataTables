@@ -16,13 +16,13 @@
  */
 
 /**
- * Initialisation options that can be given to DataTables at initialisation 
+ * Initialisation options that can be given to DataTables at initialisation
  * time.
  *  @namespace
  */
 DataTable.defaults = {
 	/**
-	 * An array of data to use for the table, passed in at initialisation which 
+	 * An array of data to use for the table, passed in at initialisation which
 	 * will be used in preference to any data which is already in the DOM. This is
 	 * particularly useful for constructing tables purely in Javascript, for
 	 * example with a custom Ajax call.
@@ -31,7 +31,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Option
 	 *  @name DataTable.defaults.data
-	 * 
+	 *
 	 *  @example
 	 *    // Using a 2D array data source
 	 *    $(document).ready( function () {
@@ -49,7 +49,7 @@ DataTable.defaults = {
 	 *        ]
 	 *      } );
 	 *    } );
-	 *    
+	 *
 	 *  @example
 	 *    // Using an array of objects as a data source (`data`)
 	 *    $(document).ready( function () {
@@ -84,17 +84,17 @@ DataTable.defaults = {
 
 
 	/**
-	 * If sorting is enabled, then DataTables will perform a first pass sort on 
-	 * initialisation. You can define which column(s) the sort is performed upon, 
-	 * and the sorting direction, with this variable. The `sorting` array should 
-	 * contain an array for each column to be sorted initially containing the 
+	 * If sorting is enabled, then DataTables will perform a first pass sort on
+	 * initialisation. You can define which column(s) the sort is performed upon,
+	 * and the sorting direction, with this variable. The `sorting` array should
+	 * contain an array for each column to be sorted initially containing the
 	 * column's index and a direction string ('asc' or 'desc').
 	 *  @type array
 	 *  @default [[0,'asc']]
 	 *
 	 *  @dtopt Option
 	 *  @name DataTable.defaults.sorting
-	 * 
+	 *
 	 *  @example
 	 *    // Sort by 3rd column first, and then 4th column
 	 *    $(document).ready( function() {
@@ -102,7 +102,7 @@ DataTable.defaults = {
 	 *        "sorting": [[2,'asc'], [3,'desc']]
 	 *      } );
 	 *    } );
-	 *    
+	 *
 	 *    // No initial sorting
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -114,18 +114,18 @@ DataTable.defaults = {
 
 
 	/**
-	 * This parameter is basically identical to the `sorting` parameter, but 
-	 * cannot be overridden by user interaction with the table. What this means 
-	 * is that you could have a column (visible or hidden) which the sorting will 
-	 * always be forced on first - any sorting after that (from the user) will 
-	 * then be performed as required. This can be useful for grouping rows 
+	 * This parameter is basically identical to the `sorting` parameter, but
+	 * cannot be overridden by user interaction with the table. What this means
+	 * is that you could have a column (visible or hidden) which the sorting will
+	 * always be forced on first - any sorting after that (from the user) will
+	 * then be performed as required. This can be useful for grouping rows
 	 * together.
 	 *  @type array
 	 *  @default null
 	 *
 	 *  @dtopt Option
 	 *  @name DataTable.defaults.sortingFixed
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -137,33 +137,180 @@ DataTable.defaults = {
 
 
 	/**
+	 * DataTables can be instructed to load data to display in the table from a
+	 * Ajax source. This option defines how that Ajax call is made and where to.
+	 *
+	 * The `ajax` property has three different modes of operation, depending on
+	 * how it is defined. These are:
+	 *
+	 * * `string` - Set the URL from where the data should be loaded from.
+	 * * `object` - Define properties for `jQuery.ajax`.
+	 * * `function` - Custom data get function
+	 *
+	 * `string`
+	 * --------
+	 *
+	 * As a string, the `ajax` property simply defines the URL from which
+	 * DataTables will load data.
+	 *
+	 * `object`
+	 * --------
+	 *
+	 * As an object, the parameters in the object are passed to
+	 * [jQuery.ajax](http://api.jquery.com/jQuery.ajax/) allowing fine control
+	 * of the Ajax request. DataTables has a number of default parameters which
+	 * you can override using this option. Please refer to the jQuery
+	 * documentation for a full description of the options available, although
+	 * the following parameters provide additional options in DataTables or
+	 * require special consideration:
+	 *
+	 * * `data` - As with jQuery, `data` can be provided as an object or array
+	 *   of name/value pairs, but it can also be used as a function to
+	 *   manipulate the data DataTables sends to the server. The function takes
+	 *   a single parameter, an array of name/value pairs that DataTables has
+	 *   readied for sending. An object or array can be returned which will be
+	 *   merged into the DataTables defaults, or you can add the items to the
+	 *   array passed in. This supersedes `fnServerParams` from DataTables 1.9-.
+	 *
+	 * * `dataSrc` - By default DataTables will look for the property 'aaData'
+	 *   when obtaining data from an Ajax source or for server-side processing -
+	 *   this parameter allows that property to be changed. You can use
+	 *   Javascript dotted object notation to get a data source for multiple
+	 *   levels of nesting, or it my be used as a function. As a function it
+	 *   takes a single parameter, the JSON returned from the server, which can
+	 *   be manipulated as required, with the returned value being that used by
+	 *   DataTables as the data source for the table. This supersedes
+	 *   `sAjaxDataProp` from DataTables 1.9-.
+	 *
+	 * * `success` - Should not be overridden it is used internally in
+	 *   DataTables. To manipulate the data returned by the server use
+	 *   `ajax.dataSrc`, or use `ajax` as a function (see below).
+	 *
+	 * `function`
+	 * ----------
+	 *
+	 * As a function, making the Ajax call is left up to yourself allowing
+	 * complete control of the Ajax request. Indeed, if desired, a method other
+	 * than Ajax could be used to obtain the required data, such as Web storage
+	 * or an AIR database.
+	 *
+	 * The function is given four parameters and no return is required. The
+	 * parameters are:
+	 *
+	 * 1. _object_ - Data to send to the server
+	 * 2. _function_ - Callback function that must be executed when the required
+	 *    data has been obtained. That data should be passed into the callback
+	 *    as the only parameter
+	 * 3. _object_ - DataTables settings object for the table
+	 *
+	 * Note that this supersedes `fnServerData` from DataTables 1.9-.
+	 *
+	 *  @type string|object|function
+	 *  @default null
+	 *
+	 *  @dtopt Option
+	 *  @name DataTable.defaults.ajax
+	 *  @since 1.10.0
+	 *
+	 * @example
+	 *   // Get JSON data from a file via Ajax.
+	 *   // Note DataTables expects data in the form `{ aaData: [ ...data... ] }` by default).
+	 *   $('#example').dataTable( {
+	 *     "ajax": "data.json"
+	 *   } );
+	 *
+	 * @example
+	 *   // Get JSON data from a file via Ajax, using `dataSrc` to change
+	 *   // `aaData` to `tableData` (i.e. `{ aaData: [ ...data... ] }`)
+	 *   $('#example').dataTable( {
+	 *     "ajax": {
+	 *       "url": "data.json",
+	 *       "dataSrc": "tableData"
+	 *     }
+	 *   } );
+	 *
+	 * @example
+	 *   // Get JSON data from a file via Ajax, using `dataSrc` to read data
+	 *   // from a plain array rather than an array in an object
+	 *   $('#example').dataTable( {
+	 *     "ajax": {
+	 *       "url": "data.json",
+	 *       "dataSrc": ""
+	 *     }
+	 *   } );
+	 *
+	 * @example
+	 *   // Manipulate the data returned from the server - add a link to data
+	 *   // (note this can, should, be done using `render` for the column - this
+	 *   // is just a simple example of how the data can be manipulated).
+	 *   $('#example').dataTable( {
+	 *     "ajax": {
+	 *       "url": "data.json",
+	 *       "dataSrc": function ( json ) {
+	 *         for ( var i=0, ien=json.length ; i<ien ; i++ ) {
+	 *           json[i][0] = '<a href="/message/'+json[i][0]+'>View message</a>';
+	 *         }
+	 *         return json;
+	 *       }
+	 *     }
+	 *   } );
+	 *
+	 * @example
+	 *   // Add data to the request
+	 *   $('#example').dataTable( {
+	 *     "ajax": {
+	 *       "url": "data.json",
+	 *       "data": function ( d ) {
+	 *         return {
+	 *           "extra_search": $('#extra').val()
+	 *         };
+	 *       }
+	 *     }
+	 *   } );
+	 *
+	 * @example
+	 *   // Send request as POST
+	 *   $('#example').dataTable( {
+	 *     "ajax": {
+	 *       "url": "data.json",
+	 *       "type": "POST"
+	 *     }
+	 *   } );
+	 *
+	 * @example
+	 *   // Get the data from localStorage (could interface with a form for
+	 *   // adding, editing and removing rows).
+	 *   $('#example').dataTable( {
+	 *     "ajax": function (data, callback, settings) {
+	 *       callback(
+	 *         JSON.parse( localStorage.getItem('dataTablesData') )
+	 *       );
+	 *     }
+	 *   } );
+	 */
+	"ajax": null,
+
+
+	/**
 	 * This parameter allows you to readily specify the entries in the length drop
-	 * down menu that DataTables shows when pagination is enabled. It can be 
-	 * either a 1D array of options which will be used for both the displayed 
-	 * option and the value, or a 2D array which will use the array in the first 
-	 * position as the value, and the array in the second position as the 
+	 * down menu that DataTables shows when pagination is enabled. It can be
+	 * either a 1D array of options which will be used for both the displayed
+	 * option and the value, or a 2D array which will use the array in the first
+	 * position as the value, and the array in the second position as the
 	 * displayed options (useful for language strings such as 'All').
+	 *
+	 * Note that the `displayLength` property will be automatically set to the
+	 * first value given in this array, unless `displayLength` is also provided.
 	 *  @type array
 	 *  @default [ 10, 25, 50, 100 ]
 	 *
 	 *  @dtopt Option
 	 *  @name DataTable.defaults.lengthMenu
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
 	 *        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]]
-	 *      } );
-	 *    } );
-	 *  
-	 *  @example
-	 *    // Setting the default display length as well as length menu
-	 *    // This is likely to be wanted if you remove the '10' option which
-	 *    // is the displayLength default.
-	 *    $(document).ready( function() {
-	 *      $('#example').dataTable( {
-	 *        "displayLength": 25,
-	 *        "lengthMenu": [[25, 50, 100, -1], [25, 50, 100, "All"]]
 	 *      } );
 	 *    } );
 	 */
@@ -173,7 +320,7 @@ DataTable.defaults = {
 	/**
 	 * The `columns` option in the initialisation parameter allows you to define
 	 * details about the way individual columns behave. For a full list of
-	 * column options that can be set, please see 
+	 * column options that can be set, please see
 	 * {@link DataTable.defaults.column}. Note that if you use `columns` to
 	 * define your columns, you must have an entry in the array for every single
 	 * column that you have in your table (these can be null if you don't which
@@ -185,11 +332,11 @@ DataTable.defaults = {
 	"aoColumns": null,
 
 	/**
-	 * Very similar to `columns`, `columnDefs` allows you to target a specific 
-	 * column, multiple columns, or all columns, using the `targets` property of 
-	 * each object in the array. This allows great flexibility when creating 
-	 * tables, as the `columnDefs` arrays can be of any length, targeting the 
-	 * columns you specifically want. `columnDefs` may use any of the column 
+	 * Very similar to `columns`, `columnDefs` allows you to target a specific
+	 * column, multiple columns, or all columns, using the `targets` property of
+	 * each object in the array. This allows great flexibility when creating
+	 * tables, as the `columnDefs` arrays can be of any length, targeting the
+	 * columns you specifically want. `columnDefs` may use any of the column
 	 * options available: {@link DataTable.defaults.column}, but it _must_
 	 * have `targets` defined in each object in the array. Values in the `targets`
 	 * array may be:
@@ -208,7 +355,7 @@ DataTable.defaults = {
 
 	/**
 	 * Basically the same as `search`, this parameter defines the individual column
-	 * filtering state at initialisation time. The array must be of the same size 
+	 * filtering state at initialisation time. The array must be of the same size
 	 * as the number of columns, and each element be an object with the parameters
 	 * `search` and `escapeRegex` (the latter is optional). 'null' is also
 	 * accepted and the default will be used.
@@ -217,7 +364,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Option
 	 *  @name DataTable.defaults.searchCols
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -234,8 +381,8 @@ DataTable.defaults = {
 
 
 	/**
-	 * An array of CSS classes that should be applied to displayed rows. This 
-	 * array may be of any length, and DataTables will apply each class 
+	 * An array of CSS classes that should be applied to displayed rows. This
+	 * array may be of any length, and DataTables will apply each class
 	 * sequentially, looping when required.
 	 *  @type array
 	 *  @default null <i>Will take the values determined by the `oClasses.stripe*`
@@ -243,7 +390,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Option
 	 *  @name DataTable.defaults.stripeClasses
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -263,7 +410,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.autoWidth
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function () {
 	 *      $('#example').dataTable( {
@@ -285,7 +432,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.deferRender
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -298,7 +445,7 @@ DataTable.defaults = {
 
 
 	/**
-	 * Replace a DataTable which matches the given selector and replace it with 
+	 * Replace a DataTable which matches the given selector and replace it with
 	 * one which has the properties of the new initialisation object passed. If no
 	 * table matches the selector, then the new DataTable will be constructed as
 	 * per normal.
@@ -307,14 +454,14 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.destroy
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
 	 *        "srollY": "200px",
 	 *        "paginate": false
 	 *      } );
-	 *      
+	 *
 	 *      // Some time later....
 	 *      $('#example').dataTable( {
 	 *        "filter": false,
@@ -338,7 +485,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.filter
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function () {
 	 *      $('#example').dataTable( {
@@ -350,7 +497,7 @@ DataTable.defaults = {
 
 
 	/**
-	 * Enable or disable the table information display. This shows information 
+	 * Enable or disable the table information display. This shows information
 	 * about the data that is currently visible on the page, including information
 	 * about filtered data if that action is being performed.
 	 *  @type boolean
@@ -358,7 +505,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.info
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function () {
 	 *      $('#example').dataTable( {
@@ -378,7 +525,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.jQueryUI
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -397,7 +544,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.lengthChange
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function () {
 	 *      $('#example').dataTable( {
@@ -415,7 +562,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.paginate
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function () {
 	 *      $('#example').dataTable( {
@@ -436,7 +583,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.processing
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function () {
 	 *      $('#example').dataTable( {
@@ -460,13 +607,13 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.retrieve
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      initTable();
 	 *      tableActions();
 	 *    } );
-	 *    
+	 *
 	 *    function initTable ()
 	 *    {
 	 *      return $('#example').dataTable( {
@@ -475,11 +622,11 @@ DataTable.defaults = {
 	 *        "retrieve": true
 	 *      } );
 	 *    }
-	 *    
+	 *
 	 *    function tableActions ()
 	 *    {
 	 *      var table = initTable();
-	 *      // perform API operations with oTable 
+	 *      // perform API operations with oTable
 	 *    }
 	 */
 	"bRetrieve": false,
@@ -494,7 +641,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.scrollAutoCss
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -518,7 +665,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.scrollCollapse
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -542,7 +689,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.scrollInfinite
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -565,12 +712,12 @@ DataTable.defaults = {
 	 *  @dtopt Features
 	 *  @dtopt Server-side
 	 *  @name DataTable.defaults.serverSide
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function () {
 	 *      $('#example').dataTable( {
 	 *        "serverSide": true,
-	 *        "ajaxSource": "xhr.php"
+	 *        "ajax": "xhr.php"
 	 *      } );
 	 *    } );
 	 */
@@ -585,7 +732,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.sort
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function () {
 	 *      $('#example').dataTable( {
@@ -605,7 +752,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.sortCellsTop
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -627,7 +774,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.sortClasses
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function () {
 	 *      $('#example').dataTable( {
@@ -639,11 +786,11 @@ DataTable.defaults = {
 
 
 	/**
-	 * Enable or disable state saving. When enabled HTML5 `localStorage` will be 
-	 * used to save table display information such as pagination information, 
+	 * Enable or disable state saving. When enabled HTML5 `localStorage` will be
+	 * used to save table display information such as pagination information,
 	 * display length, filtering and sorting. As such when the end user reloads
 	 * the page the display display will match what thy had previously set up.
-	 * 
+	 *
 	 * Due to the use of `localStorage` the default state saving is not supported
 	 * in IE6 or 7. If state saving is required in those browsers, use
 	 * `stateSaveCallback` to provide a storage solution such as cookies.
@@ -652,7 +799,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.stateSave
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function () {
 	 *      $('#example').dataTable( {
@@ -674,7 +821,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.createdRow
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -699,7 +846,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.drawCallback
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -718,16 +865,16 @@ DataTable.defaults = {
 	 *  @type function
 	 *  @param {node} foot "TR" element for the footer
 	 *  @param {array} data Full table data (as derived from the original HTML)
-	 *  @param {int} start Index for the current display starting point in the 
+	 *  @param {int} start Index for the current display starting point in the
 	 *    display array
-	 *  @param {int} end Index for the current display ending point in the 
+	 *  @param {int} end Index for the current display ending point in the
 	 *    display array
 	 *  @param {array int} display Index array to translate the visual position
 	 *    to the full data array
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.footerCallback
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -753,7 +900,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.formatNumber
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -761,11 +908,11 @@ DataTable.defaults = {
 	 *          if ( toFormat &lt; 1000 ) {
 	 *            return toFormat;
 	 *          } else {
-	 *            var 
-	 *              s=(toFormat+""), 
-	 *              a=s.split(""), out="", 
+	 *            var
+	 *              s=(toFormat+""),
+	 *              a=s.split(""), out="",
 	 *              iLen=s.length;
-	 *            
+	 *
 	 *            for ( var i=0 ; i&lt;iLen ; i++ ) {
 	 *              if ( i%3 === 0 &amp;&amp; i !== 0 ) {
 	 *                out = "'"+out;
@@ -815,7 +962,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.headerCallback
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -847,7 +994,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.infoCallback
-	 * 
+	 *
 	 *  @example
 	 *    $('#example').dataTable( {
 	 *      "infoCallback": function( settings, start, end, nax, total, pre ) {
@@ -870,7 +1017,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.initComplete
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -894,7 +1041,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.preDrawCallback
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -922,7 +1069,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.rowCallback
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -939,13 +1086,16 @@ DataTable.defaults = {
 
 
 	/**
+	 * __Deprecated__ The functionality provided by this parameter has now been
+	 * superseded by that provided through `ajax`, which should be used instead.
+	 *
 	 * This parameter allows you to override the default function which obtains
-	 * the data from the server so something more suitable for your application. For
-	 * example you could use POST data, or pull information from a Gears or AIR
-	 * database.
+	 * the data from the server so something more suitable for your application.
+	 * For example you could use POST data, or pull information from a Gears or
+	 * AIR database.
 	 *  @type function
 	 *  @member
-	 *  @param {string} source HTTP source to obtain the data from (`ajaxSource`)
+	 *  @param {string} source HTTP source to obtain the data from (`ajax`)
 	 *  @param {array} data A key/value pair object containing the data to send
 	 *    to the server
 	 *  @param {function} callback to be called on completion of the data get
@@ -955,54 +1105,17 @@ DataTable.defaults = {
 	 *  @dtopt Callbacks
 	 *  @dtopt Server-side
 	 *  @name DataTable.defaults.serverData
-	 * 
-	 *  @example
-	 *    // POST data to server (note you can use `serverMethod` to set the
-	 *    // HTTP method is that is all you want to use `serverData` for.
-	 *    $(document).ready( function() {
-	 *      $('#example').dataTable( {
-	 *        "processing": true,
-	 *        "serverSide": true,
-	 *        "ajaxSource": "xhr.php",
-	 *        "serverData": function ( source, data, callback, settings ) {
-	 *          settings.jqXHR = $.ajax( {
-	 *            "dataType": 'json', 
-	 *            "type": "POST", 
-	 *            "url": source, 
-	 *            "data": data, 
-	 *            "success": callback
-	 *          } );
-	 *        }
-	 *      } );
-	 *    } );
+	 *
+	 *  @deprecated 1.10. Please use `ajax` for this functionality now.
 	 */
-	"fnServerData": function ( url, data, callback, settings ) {
-		settings.jqXHR = $.ajax( {
-			"url":  url,
-			"data": data,
-			"success": function (json) {
-				if ( json.sError ) {
-					settings.oApi._fnLog( settings, 0, json.sError );
-				}
-				
-				$(settings.oInstance).trigger('xhr', [settings, json]);
-				callback( json );
-			},
-			"dataType": "json",
-			"cache": false,
-			"type": settings.sServerMethod,
-			"error": function (xhr, error, thrown) {
-				if ( error == "parsererror" ) {
-					settings.oApi._fnLog( settings, 0, "DataTables warning: JSON data from "+
-						"server could not be parsed. This is caused by a JSON formatting error." );
-				}
-			}
-		} );
-	},
+	"fnServerData": null,
 
 
 	/**
-	 * It is often useful to send extra data to the server when making an Ajax
+	 * __Deprecated__ The functionality provided by this parameter has now been
+	 * superseded by that provided through `ajax`, which should be used instead.
+	 *
+	 *  It is often useful to send extra data to the server when making an Ajax
 	 * request - for example custom filtering information, and this callback
 	 * function makes it trivial to send extra information to the server. The
 	 * passed in parameter is the data set that has been constructed by
@@ -1019,18 +1132,8 @@ DataTable.defaults = {
 	 *  @dtopt Callbacks
 	 *  @dtopt Server-side
 	 *  @name DataTable.defaults.serverParams
-	 * 
-	 *  @example
-	 *    $(document).ready( function() {
-	 *      $('#example').dataTable( {
-	 *        "processing": true,
-	 *        "serverSide": true,
-	 *        "ajaxSource": "scripts/server_processing.php",
-	 *        "serverParams": function ( data ) {
-	 *          data.push( { "name": "more_data", "value": "my_value" } );
-	 *        }
-	 *      } );
-	 *    } );
+	 *
+	 *  @deprecated 1.10. Please use `ajax` for this functionality now.
 	 */
 	"fnServerParams": null,
 
@@ -1046,14 +1149,14 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.stateLoadCallback
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
 	 *        "stateSave": true,
 	 *        "stateLoadCallback": function (settings) {
 	 *          var o;
-	 *          
+	 *
 	 *          // Send an Ajax request to the server to get the data. Note that
 	 *          // this is a synchronous request.
 	 *          $.ajax( {
@@ -1064,7 +1167,7 @@ DataTable.defaults = {
 	 *              o = json;
 	 *            }
 	 *          } );
-	 *          
+	 *
 	 *          return o;
 	 *        }
 	 *      } );
@@ -1072,7 +1175,7 @@ DataTable.defaults = {
 	 */
 	"fnStateLoadCallback": function ( settings ) {
 		try {
-			return JSON.parse( 
+			return JSON.parse(
 				localStorage.getItem('DataTables_'+settings.sInstance+'_'+window.location.pathname)
 			);
 		} catch (e) {}
@@ -1082,8 +1185,8 @@ DataTable.defaults = {
 	/**
 	 * Callback which allows modification of the saved state prior to loading that state.
 	 * This callback is called when the table is loading state from the stored data, but
-	 * prior to the settings object being modified by the saved state. Note that for 
-	 * plug-in authors, you should use the `stateLoadParams` event to load parameters for 
+	 * prior to the settings object being modified by the saved state. Note that for
+	 * plug-in authors, you should use the `stateLoadParams` event to load parameters for
 	 * a plug-in.
 	 *  @type function
 	 *  @param {object} settings DataTables settings object
@@ -1091,7 +1194,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.stateLoadParams
-	 * 
+	 *
 	 *  @example
 	 *    // Remove a saved filter, so filtering is never loaded
 	 *    $(document).ready( function() {
@@ -1102,7 +1205,7 @@ DataTable.defaults = {
 	 *        }
 	 *      } );
 	 *    } );
-	 * 
+	 *
 	 *  @example
 	 *    // Disallow state loading by returning false
 	 *    $(document).ready( function() {
@@ -1126,7 +1229,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.stateLoaded
-	 * 
+	 *
 	 *  @example
 	 *    // Show an alert with the filtering value that was saved
 	 *    $(document).ready( function() {
@@ -1152,7 +1255,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.stateSaveCallback
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -1181,10 +1284,10 @@ DataTable.defaults = {
 
 
 	/**
-	 * Callback which allows modification of the state to be saved. Called when the table 
+	 * Callback which allows modification of the state to be saved. Called when the table
 	 * has changed state a new state save is required. This method allows modification of
-	 * the state saving object prior to actually doing the save, including addition or 
-	 * other state properties or modification. Note that for plug-in authors, you should 
+	 * the state saving object prior to actually doing the save, including addition or
+	 * other state properties or modification. Note that for plug-in authors, you should
 	 * use the `stateSaveParams` event to save parameters for a plug-in.
 	 *  @type function
 	 *  @param {object} settings DataTables settings object
@@ -1192,7 +1295,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Callbacks
 	 *  @name DataTable.defaults.stateSaveParams
-	 * 
+	 *
 	 *  @example
 	 *    // Remove a saved filter, so filtering is never saved
 	 *    $(document).ready( function() {
@@ -1216,7 +1319,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.stateDuration
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -1244,23 +1347,23 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.deferLoading
-	 * 
+	 *
 	 *  @example
 	 *    // 57 records available in the table, no filtering applied
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
 	 *        "serverSide": true,
-	 *        "ajaxSource": "scripts/server_processing.php",
+	 *        "ajax": "scripts/server_processing.php",
 	 *        "deferLoading": 57
 	 *      } );
 	 *    } );
-	 * 
+	 *
 	 *  @example
 	 *    // 57 records after filtering, 100 without filtering (an initial filter applied)
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
 	 *        "serverSide": true,
-	 *        "ajaxSource": "scripts/server_processing.php",
+	 *        "ajax": "scripts/server_processing.php",
 	 *        "deferLoading": [ 57, 100 ],
 	 *        "search": {
 	 *          "search": "my_filter"
@@ -1280,7 +1383,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.displayLength
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -1301,7 +1404,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.displayStart
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -1323,7 +1426,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.scrollLoadGap
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -1349,7 +1452,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.tabIndex
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -1385,7 +1488,7 @@ DataTable.defaults = {
 			 *
 			 *  @dtopt Language
 			 *  @name DataTable.defaults.language.aria.sortAscending
-			 * 
+			 *
 			 *  @example
 			 *    $(document).ready( function() {
 			 *      $('#example').dataTable( {
@@ -1408,7 +1511,7 @@ DataTable.defaults = {
 			 *
 			 *  @dtopt Language
 			 *  @name DataTable.defaults.language.aria.sortDescending
-			 * 
+			 *
 			 *  @example
 			 *    $(document).ready( function() {
 			 *      $('#example').dataTable( {
@@ -1438,7 +1541,7 @@ DataTable.defaults = {
 			 *
 			 *  @dtopt Language
 			 *  @name DataTable.defaults.language.paginate.first
-			 * 
+			 *
 			 *  @example
 			 *    $(document).ready( function() {
 			 *      $('#example').dataTable( {
@@ -1461,7 +1564,7 @@ DataTable.defaults = {
 			 *
 			 *  @dtopt Language
 			 *  @name DataTable.defaults.language.paginate.last
-			 * 
+			 *
 			 *  @example
 			 *    $(document).ready( function() {
 			 *      $('#example').dataTable( {
@@ -1477,14 +1580,14 @@ DataTable.defaults = {
 		
 		
 			/**
-			 * Text to use for the 'next' pagination button (to take the user to the 
+			 * Text to use for the 'next' pagination button (to take the user to the
 			 * next page).
 			 *  @type string
 			 *  @default Next
 			 *
 			 *  @dtopt Language
 			 *  @name DataTable.defaults.language.paginate.next
-			 * 
+			 *
 			 *  @example
 			 *    $(document).ready( function() {
 			 *      $('#example').dataTable( {
@@ -1500,14 +1603,14 @@ DataTable.defaults = {
 		
 		
 			/**
-			 * Text to use for the 'previous' pagination button (to take the user to  
+			 * Text to use for the 'previous' pagination button (to take the user to
 			 * the previous page).
 			 *  @type string
 			 *  @default Previous
 			 *
 			 *  @dtopt Language
 			 *  @name DataTable.defaults.language.paginate.previous
-			 * 
+			 *
 			 *  @example
 			 *    $(document).ready( function() {
 			 *      $('#example').dataTable( {
@@ -1532,7 +1635,7 @@ DataTable.defaults = {
 		 *
 		 *  @dtopt Language
 		 *  @name DataTable.defaults.language.emptyTable
-		 * 
+		 *
 		 *  @example
 		 *    $(document).ready( function() {
 		 *      $('#example').dataTable( {
@@ -1546,16 +1649,16 @@ DataTable.defaults = {
 	
 	
 		/**
-		 * This string gives information to the end user about the information that 
-		 * is current on display on the page. The _START_, _END_ and _TOTAL_ 
-		 * variables are all dynamically replaced as the table display updates, and 
+		 * This string gives information to the end user about the information that
+		 * is current on display on the page. The _START_, _END_ and _TOTAL_
+		 * variables are all dynamically replaced as the table display updates, and
 		 * can be freely moved or removed as the language requirements change.
 		 *  @type string
 		 *  @default Showing _START_ to _END_ of _TOTAL_ entries
 		 *
 		 *  @dtopt Language
 		 *  @name DataTable.defaults.language.info
-		 * 
+		 *
 		 *  @example
 		 *    $(document).ready( function() {
 		 *      $('#example').dataTable( {
@@ -1569,14 +1672,14 @@ DataTable.defaults = {
 	
 	
 		/**
-		 * Display information string for when the table is empty. Typically the 
+		 * Display information string for when the table is empty. Typically the
 		 * format of this string should match `info`.
 		 *  @type string
 		 *  @default Showing 0 to 0 of 0 entries
 		 *
 		 *  @dtopt Language
 		 *  @name DataTable.defaults.language.infoEmpty
-		 * 
+		 *
 		 *  @example
 		 *    $(document).ready( function() {
 		 *      $('#example').dataTable( {
@@ -1590,15 +1693,15 @@ DataTable.defaults = {
 	
 	
 		/**
-		 * When a user filters the information in a table, this string is appended 
-		 * to the information (`info`) to give an idea of how strong the filtering 
+		 * When a user filters the information in a table, this string is appended
+		 * to the information (`info`) to give an idea of how strong the filtering
 		 * is. The variable _MAX_ is dynamically updated.
 		 *  @type string
 		 *  @default (filtered from _MAX_ total entries)
 		 *
 		 *  @dtopt Language
 		 *  @name DataTable.defaults.language.infoFiltered
-		 * 
+		 *
 		 *  @example
 		 *    $(document).ready( function() {
 		 *      $('#example').dataTable( {
@@ -1621,7 +1724,7 @@ DataTable.defaults = {
 		 *
 		 *  @dtopt Language
 		 *  @name DataTable.defaults.language.infoPostFix
-		 * 
+		 *
 		 *  @example
 		 *    $(document).ready( function() {
 		 *      $('#example').dataTable( {
@@ -1644,7 +1747,7 @@ DataTable.defaults = {
 		 *
 		 *  @dtopt Language
 		 *  @name DataTable.defaults.language.infoThousands
-		 * 
+		 *
 		 *  @example
 		 *    $(document).ready( function() {
 		 *      $('#example').dataTable( {
@@ -1664,10 +1767,10 @@ DataTable.defaults = {
 		 * with a custom select box if required.
 		 *  @type string
 		 *  @default Show _MENU_ entries
-	 	*
+		 *
 		 *  @dtopt Language
 		 *  @name DataTable.defaults.language.lengthMenu
-		 * 
+		 *
 		 *  @example
 		 *    // Language change only
 		 *    $(document).ready( function() {
@@ -1677,7 +1780,7 @@ DataTable.defaults = {
 		 *        }
 		 *      } );
 		 *    } );
-		 *    
+		 *
 		 *  @example
 		 *    // Language and options change
 		 *    $(document).ready( function() {
@@ -1709,7 +1812,7 @@ DataTable.defaults = {
 		 *
 		 *  @dtopt Language
 		 *  @name DataTable.defaults.language.loadingRecords
-		 * 
+		 *
 		 *  @example
 		 *    $(document).ready( function() {
 		 *      $('#example').dataTable( {
@@ -1730,7 +1833,7 @@ DataTable.defaults = {
 		 *
 		 *  @dtopt Language
 		 *  @name DataTable.defaults.language.processing
-		 * 
+		 *
 		 *  @example
 		 *    $(document).ready( function() {
 		 *      $('#example').dataTable( {
@@ -1754,7 +1857,7 @@ DataTable.defaults = {
 		 *
 		 *  @dtopt Language
 		 *  @name DataTable.defaults.language.search
-		 * 
+		 *
 		 *  @example
 		 *    // Input text box will be appended at the end automatically
 		 *    $(document).ready( function() {
@@ -1764,7 +1867,7 @@ DataTable.defaults = {
 		 *        }
 		 *      } );
 		 *    } );
-		 *    
+		 *
 		 *  @example
 		 *    // Specify where the filter should appear
 		 *    $(document).ready( function() {
@@ -1790,7 +1893,7 @@ DataTable.defaults = {
 		 *
 		 *  @dtopt Language
 		 *  @name DataTable.defaults.language.url
-		 * 
+		 *
 		 *  @example
 		 *    $(document).ready( function() {
 		 *      $('#example').dataTable( {
@@ -1812,7 +1915,7 @@ DataTable.defaults = {
 		 *
 		 *  @dtopt Language
 		 *  @name DataTable.defaults.language.zeroRecords
-		 * 
+		 *
 		 *  @example
 		 *    $(document).ready( function() {
 		 *      $('#example').dataTable( {
@@ -1839,7 +1942,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.search
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -1851,6 +1954,9 @@ DataTable.defaults = {
 
 
 	/**
+	 * __Deprecated__ The functionality provided by this parameter has now been
+	 * superseded by that provided through `ajax`, which should be used instead.
+	 *
 	 * By default DataTables will look for the property 'aaData' when obtaining
 	 * data from an Ajax source or for server-side processing - this parameter
 	 * allows that property to be changed. You can use Javascript dotted object
@@ -1861,46 +1967,29 @@ DataTable.defaults = {
 	 *  @dtopt Options
 	 *  @dtopt Server-side
 	 *  @name DataTable.defaults.ajaxDataProp
-	 * 
-	 *  @example
-	 *    // Get data from { "data": [...] }
-	 *    $(document).ready( function() {
-	 *      var oTable = $('#example').dataTable( {
-	 *        "ajaxSource": "sources/data.txt",
-	 *        "ajaxDataProp": "data"
-	 *      } );
-	 *    } );
-	 *    
-	 *  @example
-	 *    // Get data from { "data": { "inner": [...] } }
-	 *    $(document).ready( function() {
-	 *      var oTable = $('#example').dataTable( {
-	 *        "ajaxSource": "sources/data.txt",
-	 *        "ajaxDataProp": "data.inner"
-	 *      } );
-	 *    } );
+	 *
+	 *  @deprecated 1.10. Please use `ajax` for this functionality now.
 	 */
 	"sAjaxDataProp": "aaData",
 
 
 	/**
-	 * You can instruct DataTables to load data from an external source using this
-	 * parameter (use aData if you want to pass data in you already have). Simply
-	 * provide a url a JSON object can be obtained from. This object must include
-	 * the parameter `aaData` which is the data source for the table.
+	 * __Deprecated__ The functionality provided by this parameter has now been
+	 * superseded by that provided through `ajax`, which should be used instead.
+	 *
+	 * You can instruct DataTables to load data from an external
+	 * source using this parameter (use aData if you want to pass data in you
+	 * already have). Simply provide a url a JSON object can be obtained from.
+	 * This object must include the parameter `aaData` which is the data source
+	 * for the table.
 	 *  @type string
 	 *  @default null
 	 *
 	 *  @dtopt Options
 	 *  @dtopt Server-side
 	 *  @name DataTable.defaults.ajaxSource
-	 * 
-	 *  @example
-	 *    $(document).ready( function() {
-	 *      $('#example').dataTable( {
-	 *        "ajaxSource": "/dataTables/json.php"
-	 *      } );
-	 *    } )
+	 *
+	 *  @deprecated 1.10. Please use `ajax` for this functionality now.
 	 */
 	"sAjaxSource": null,
 
@@ -1912,7 +2001,7 @@ DataTable.defaults = {
 	 * table). DIV elements (with or without a custom class) can also be added to
 	 * aid styling. The follow syntax is used:
 	 *   <ul>
-	 *     <li>The following options are allowed:	
+	 *     <li>The following options are allowed:
 	 *       <ul>
 	 *         <li>'l' - Length changing</li
 	 *         <li>'f' - Filtering input</li>
@@ -1943,12 +2032,12 @@ DataTable.defaults = {
 	 *     </li>
 	 *   </ul>
 	 *  @type string
-	 *  @default lfrtip <i>(when `jQueryUI` is false)</i> <b>or</b> 
+	 *  @default lfrtip <i>(when `jQueryUI` is false)</i> <b>or</b>
 	 *    <"H"lfr>t<"F"ip> <i>(when `jQueryUI` is true)</i>
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.dom
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -1968,7 +2057,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.paginationType
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -1990,7 +2079,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.scrollX
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -2014,7 +2103,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Options
 	 *  @name DataTable.defaults.scrollXInner
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -2038,7 +2127,7 @@ DataTable.defaults = {
 	 *
 	 *  @dtopt Features
 	 *  @name DataTable.defaults.scrollY
-	 * 
+	 *
 	 *  @example
 	 *    $(document).ready( function() {
 	 *      $('#example').dataTable( {
@@ -2051,6 +2140,9 @@ DataTable.defaults = {
 
 
 	/**
+	 * __Deprecated__ The functionality provided by this parameter has now been
+	 * superseded by that provided through `ajax`, which should be used instead.
+	 *
 	 * Set the HTTP method that is used to make the Ajax call for server-side
 	 * processing or Ajax sourced data.
 	 *  @type string
@@ -2059,15 +2151,8 @@ DataTable.defaults = {
 	 *  @dtopt Options
 	 *  @dtopt Server-side
 	 *  @name DataTable.defaults.serverMethod
-	 * 
-	 *  @example
-	 *    $(document).ready( function() {
-	 *      $('#example').dataTable( {
-	 *        "serverSide": true,
-	 *        "ajaxSource": "scripts/post.php",
-	 *        "serverMethod": "POST"
-	 *      } );
-	 *    } );
+	 *
+	 *  @deprecated 1.10. Please use `ajax` for this functionality now.
 	 */
 	"sServerMethod": "GET"
 };

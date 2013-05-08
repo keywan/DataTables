@@ -141,7 +141,7 @@ function _fnBuildHead( oSettings )
 		_fnDetectHeader( oSettings.aoHeader, oSettings.nTHead );
 	}
 	
-	/* ARIA role for the rows */	
+	/* ARIA role for the rows */
 	$(oSettings.nTHead).children('tr').attr('role', 'row');
 	
 	/* Add the extra markup needed by jQuery UI's themes */
@@ -206,13 +206,13 @@ function _fnBuildHead( oSettings )
  * Draw the header (or footer) element based on the column visibility states. The
  * methodology here is to use the layout array from _fnDetectHeader, modified for
  * the instantaneous column visibility, to construct the new layout. The grid is
- * traversed over cell at a time in a rows x columns grid fashion, although each 
+ * traversed over cell at a time in a rows x columns grid fashion, although each
  * cell insert can cover multiple elements in the grid - which is tracks using the
  * aApplied array. Cell inserts in the grid will only occur where there isn't
  * already a cell in that position.
  *  @param {object} oSettings dataTables settings object
  *  @param array {objects} aoSource Layout array from _fnDetectHeader
- *  @param {boolean} [bIncludeHidden=false] If true then include the hidden columns in the calc, 
+ *  @param {boolean} [bIncludeHidden=false] If true then include the hidden columns in the calc,
  *  @memberof DataTable#oApi
  */
 function _fnDrawHead( oSettings, aoSource, bIncludeHidden )
@@ -320,25 +320,28 @@ function _fnDraw( oSettings )
 	var i, iLen, n;
 	var anRows = [];
 	var iRowCount = 0;
-	var iStripes = oSettings.asStripeClasses.length;
+	var asStripeClasses = oSettings.asStripeClasses;
+	var iStripes = asStripeClasses.length;
 	var iOpenRows = oSettings.aoOpenRows.length;
+	var oLang = oSettings.oLanguage;
+	var iInitDisplayStart = oSettings.iInitDisplayStart;
+	var iDisplayStart = oSettings._iDisplayStart;
+	var iDisplayEnd = oSettings.fnDisplayEnd();
+	var bServerSide = oSettings.oFeatures.bServerSide;
+	var aiDisplay = oSettings.aiDisplay;
 	
 	oSettings.bDrawing = true;
 	
 	/* Check and see if we have an initial draw position from state saving */
-	if ( oSettings.iInitDisplayStart !== undefined && oSettings.iInitDisplayStart != -1 )
+	if ( iInitDisplayStart !== undefined && iInitDisplayStart !== -1 )
 	{
-		if ( oSettings.oFeatures.bServerSide )
-		{
-			oSettings._iDisplayStart = oSettings.iInitDisplayStart;
-		}
-		else
-		{
-			oSettings._iDisplayStart = (oSettings.iInitDisplayStart >= oSettings.fnRecordsDisplay()) ?
-				0 : oSettings.iInitDisplayStart;
-		}
+		iDisplayStart = bServerSide ?
+			iInitDisplayStart :
+			iInitDisplayStart >= oSettings.fnRecordsDisplay() ?
+				0 :
+				iInitDisplayStart;
+
 		oSettings.iInitDisplayStart = -1;
-		_fnCalculateEnd( oSettings );
 	}
 	
 	/* Server-side processing draw intercept */
@@ -347,7 +350,7 @@ function _fnDraw( oSettings )
 		oSettings.bDeferLoading = false;
 		oSettings.iDraw++;
 	}
-	else if ( !oSettings.oFeatures.bServerSide )
+	else if ( !bServerSide )
 	{
 		oSettings.iDraw++;
 	}
@@ -356,23 +359,18 @@ function _fnDraw( oSettings )
 		return;
 	}
 	
-	if ( oSettings.aiDisplay.length !== 0 )
+	if ( aiDisplay.length !== 0 )
 	{
-		var iStart = oSettings._iDisplayStart;
-		var iEnd = oSettings._iDisplayEnd;
-		
-		if ( oSettings.oFeatures.bServerSide )
-		{
-			iStart = 0;
-			iEnd = oSettings.aoData.length;
-		}
+		var iStart = bServerSide ? 0 : iDisplayStart;
+		var iEnd = bServerSide ? oSettings.aoData.length : iDisplayEnd;
 		
 		for ( var j=iStart ; j<iEnd ; j++ )
 		{
-			var aoData = oSettings.aoData[ oSettings.aiDisplay[j] ];
+			var iDataIndex = aiDisplay[j];
+			var aoData = oSettings.aoData[ iDataIndex ];
 			if ( aoData.nTr === null )
 			{
-				_fnCreateTr( oSettings, oSettings.aiDisplay[j] );
+				_fnCreateTr( oSettings, iDataIndex );
 			}
 
 			var nRow = aoData.nTr;
@@ -380,7 +378,7 @@ function _fnDraw( oSettings )
 			/* Remove the old striping classes and then add the new one */
 			if ( iStripes !== 0 )
 			{
-				var sStripe = oSettings.asStripeClasses[ iRowCount % iStripes ];
+				var sStripe = asStripeClasses[ iRowCount % iStripes ];
 				if ( aoData._sRowStripe != sStripe )
 				{
 					$(nRow).removeClass( aoData._sRowStripe ).addClass( sStripe );
@@ -389,8 +387,8 @@ function _fnDraw( oSettings )
 			}
 			
 			/* Row callback functions - might want to manipulate the row */
-			_fnCallbackFire( oSettings, 'aoRowCallback', null, 
-				[nRow, oSettings.aoData[ oSettings.aiDisplay[j] ]._aData, iRowCount, j] );
+			_fnCallbackFire( oSettings, 'aoRowCallback', null,
+				[nRow, aoData._aData, iRowCount, j] );
 			
 			anRows.push( nRow );
 			iRowCount++;
@@ -409,16 +407,8 @@ function _fnDraw( oSettings )
 	else
 	{
 		/* Table is empty - create a row with an empty message in it */
-		anRows[ 0 ] = document.createElement( 'tr' );
-		
-		if ( oSettings.asStripeClasses[0] )
-		{
-			anRows[ 0 ].className = oSettings.asStripeClasses[0];
-		}
-
-		var oLang = oSettings.oLanguage;
 		var sZero = oLang.sZeroRecords;
-		if ( oSettings.iDraw == 1 && oSettings.sAjaxSource !== null && !oSettings.oFeatures.bServerSide )
+		if ( oSettings.iDraw == 1 && oSettings.sAjaxSource !== null && !bServerSide )
 		{
 			sZero = oLang.sLoadingRecords;
 		}
@@ -427,61 +417,33 @@ function _fnDraw( oSettings )
 			sZero = oLang.sEmptyTable;
 		}
 
-		var nTd = document.createElement( 'td' );
-		nTd.setAttribute( 'valign', "top" );
-		nTd.colSpan = _fnVisbleColumns( oSettings );
-		nTd.className = oSettings.oClasses.sRowEmpty;
-		nTd.innerHTML = _fnInfoMacros( oSettings, sZero );
-		
-		anRows[ iRowCount ].appendChild( nTd );
+		anRows[ 0 ] = $( '<tr/>', { 'class': iStripes ? asStripeClasses[0] : '' } )
+			.append( $('<td />', {
+				'valign':  'top',
+				'colSpan': _fnVisbleColumns( oSettings ),
+				'class':   oSettings.oClasses.sRowEmpty
+			} ).html( sZero ) )[0];
 	}
 	
 	/* Header and footer callbacks */
-	_fnCallbackFire( oSettings, 'aoHeaderCallback', 'header', [ $(oSettings.nTHead).children('tr')[0], 
-		_fnGetDataMaster( oSettings ), oSettings._iDisplayStart, oSettings.fnDisplayEnd(), oSettings.aiDisplay ] );
+	_fnCallbackFire( oSettings, 'aoHeaderCallback', 'header', [ $(oSettings.nTHead).children('tr')[0],
+		_fnGetDataMaster( oSettings ), iDisplayStart, iDisplayEnd, aiDisplay ] );
 	
-	_fnCallbackFire( oSettings, 'aoFooterCallback', 'footer', [ $(oSettings.nTFoot).children('tr')[0], 
-		_fnGetDataMaster( oSettings ), oSettings._iDisplayStart, oSettings.fnDisplayEnd(), oSettings.aiDisplay ] );
-	
-	/* 
-	 * Need to remove any old row from the display - note we can't just empty the tbody using
-	 * $().html('') since this will unbind the jQuery event handlers (even although the node 
-	 * still exists!) - equally we can't use innerHTML, since IE throws an exception.
+	_fnCallbackFire( oSettings, 'aoFooterCallback', 'footer', [ $(oSettings.nTFoot).children('tr')[0],
+		_fnGetDataMaster( oSettings ), iDisplayStart, iDisplayEnd, aiDisplay ] );
+
+	var body = $(oSettings.nTBody);
+
+	/* When doing infinite scrolling, only remove child rows when sorting, filtering or start
+	 * up. When not infinite scroll, always do it.
 	 */
-	var
-		nAddFrag = document.createDocumentFragment(),
-		nRemoveFrag = document.createDocumentFragment(),
-		nBodyPar;
-	
-	if ( oSettings.nTBody )
+	if ( !oSettings.oScroll.bInfinite || !oSettings._bInitComplete ||
+		oSettings.bSorted || oSettings.bFiltered )
 	{
-		nBodyPar = oSettings.nTBody.parentNode;
-		nRemoveFrag.appendChild( oSettings.nTBody );
-		
-		/* When doing infinite scrolling, only remove child rows when sorting, filtering or start
-		 * up. When not infinite scroll, always do it.
-		 */
-		if ( !oSettings.oScroll.bInfinite || !oSettings._bInitComplete ||
-		 	oSettings.bSorted || oSettings.bFiltered )
-		{
-			while( (n = oSettings.nTBody.firstChild) )
-			{
-				oSettings.nTBody.removeChild( n );
-			}
-		}
-		
-		/* Put the draw table into the dom */
-		for ( i=0, iLen=anRows.length ; i<iLen ; i++ )
-		{
-			nAddFrag.appendChild( anRows[i] );
-		}
-		
-		oSettings.nTBody.appendChild( nAddFrag );
-		if ( nBodyPar !== null )
-		{
-			nBodyPar.appendChild( oSettings.nTBody );
-		}
+		body.children().detach();
 	}
+
+	body.append( $(anRows) );
 	
 	/* Call all required callback functions for the end of a draw */
 	_fnCallbackFire( oSettings, 'aoDrawCallback', 'draw', [oSettings] );
@@ -490,40 +452,40 @@ function _fnDraw( oSettings )
 	oSettings.bSorted = false;
 	oSettings.bFiltered = false;
 	oSettings.bDrawing = false;
-	
-	if ( oSettings.oFeatures.bServerSide )
-	{
-		_fnProcessingDisplay( oSettings, false );
-		if ( !oSettings._bInitComplete )
-		{
-			_fnInitComplete( oSettings );
-		}
-	}
 }
 
 
 /**
  * Redraw the table - taking account of the various features which are enabled
  *  @param {object} oSettings dataTables settings object
+ *  @param {boolean} [holdPosition] Keep the current paging position. By default
+ *    the paging is reset to the first page
  *  @memberof DataTable#oApi
  */
-function _fnReDraw( oSettings )
+function _fnReDraw( settings, holdPosition )
 {
-	if ( oSettings.oFeatures.bSort )
-	{
-		/* Sorting will refilter and draw for us */
-		_fnSort( oSettings, oSettings.oPreviousSearch );
+	var
+		features = settings.oFeatures,
+		sort     = features.bSort,
+		filter   = features.bFilter;
+
+	if ( sort ) {
+		_fnSort( settings );
 	}
-	else if ( oSettings.oFeatures.bFilter )
-	{
-		/* Filtering will redraw for us */
-		_fnFilterComplete( oSettings, oSettings.oPreviousSearch );
+
+	if ( filter ) {
+		_fnFilterComplete( settings, settings.oPreviousSearch );
 	}
-	else
-	{
-		_fnCalculateEnd( oSettings );
-		_fnDraw( oSettings );
+	else {
+		// No filtering, so we want to just use the display master
+		settings.aiDisplay = settings.aiDisplayMaster.slice();
 	}
+
+	if ( holdPosition !== true ) {
+		settings._iDisplayStart = 0;
+	}
+
+	_fnDraw( settings );
 }
 
 
@@ -541,7 +503,7 @@ function _fnAddOptionsHtml ( oSettings )
 	var nHolding = $('<div></div>')[0];
 	oSettings.nTable.parentNode.insertBefore( nHolding, oSettings.nTable );
 	
-	/* 
+	/*
 	 * All DataTables are wrapped in a div
 	 */
 	oSettings.nTableWrapper = $('<div id="'+oSettings.sTableId+'_wrapper" class="'+oSettings.oClasses.sWrapper+'" role="grid"></div>')[0];
@@ -734,7 +696,7 @@ function _fnDetectHeader ( aLayout, nThead )
 				iColspan = (!iColspan || iColspan===0 || iColspan===1) ? 1 : iColspan;
 				iRowspan = (!iRowspan || iRowspan===0 || iRowspan===1) ? 1 : iRowspan;
 
-				/* There might be colspan cells already in this row, so shift our target 
+				/* There might be colspan cells already in this row, so shift our target
 				 * accordingly
 				 */
 				iColShifted = fnShiftCol( aLayout, i, iColumn );
@@ -786,7 +748,7 @@ function _fnGetUniqueThs ( oSettings, nHeader, aLayout )
 	{
 		for ( var j=0, jLen=aLayout[i].length ; j<jLen ; j++ )
 		{
-			if ( aLayout[i][j].unique && 
+			if ( aLayout[i][j].unique &&
 				 (!aReturn[j] || !oSettings.bSortCellsTop) )
 			{
 				aReturn[j] = aLayout[i][j].cell;
